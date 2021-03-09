@@ -72,6 +72,9 @@ module DE1_SoC (HEX0, HEX1, HEX2, HEX3, HEX4, HEX5, KEY, LEDR, SW, CLOCK_50,
 	assign start = SW[8];
 	
 	ps2 mouse (.CLOCK_50, .reset, .start, .button_left(mouse_click), .bin_x(x), . bin_y(y));
+	
+	//square_drawer sq (.clk(CLOCK_50), .reset, .start, .x0(x_loc), .y0(y_loc), .x, .y, .done);
+	//square_loc_picker sqp (.clk(CLOCK_50), .reset, .x_loc, .y_loc);
 
 endmodule  // DE1_SoC
 
