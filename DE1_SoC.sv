@@ -19,7 +19,7 @@
  *   VGA_VS 		- Vertical Sync of the VGA connection
  */
 module DE1_SoC (HEX0, HEX1, HEX2, HEX3, HEX4, HEX5, KEY, LEDR, SW, CLOCK_50, 
-	VGA_R, VGA_G, VGA_B, VGA_BLANK_N, VGA_CLK, VGA_HS, VGA_SYNC_N, VGA_VS);
+	VGA_R, VGA_G, VGA_B, VGA_BLANK_N, VGA_CLK, VGA_HS, VGA_SYNC_N, VGA_VS, PS2_CLK, PS2_DAT);
 	
 	output logic [6:0] HEX0, HEX1, HEX2, HEX3, HEX4, HEX5;
 	output logic [9:0] LEDR;
@@ -34,22 +34,24 @@ module DE1_SoC (HEX0, HEX1, HEX2, HEX3, HEX4, HEX5, KEY, LEDR, SW, CLOCK_50,
 	output VGA_HS;
 	output VGA_SYNC_N;
 	output VGA_VS;
+	inout PS2_CLK;
+	inout PS2_DAT;
 	
-	logic[20:0] counter;
+	logic start;
+	logic mouse_click;
+	logic[20:0] counter = 0;
+	assign start = SW[8];
+	logic done_w, done_b;
+	logic reset;
+	assign reset = SW[9];
+	logic [10:0] x, y, mouse_x, mouse_y, square_x_w, square_y_w, square_x_b, square_y_b, x_loc, y_loc;
+	logic pixel_color;
 	
-	assign HEX0 = '1;
-	assign HEX1 = '1;
 	assign HEX2 = '1;
 	assign HEX3 = '1;
 	assign HEX4 = '1;
 	assign HEX5 = '1;
 	assign LEDR[7:0] = SW[7:0];
-	
-	logic reset;
-	assign reset = SW[9];
-	
-	logic [10:0] x, y;
-	logic pixel_color;
 	
 	VGA_framebuffer fb (
 		.clk50			(CLOCK_50), 
@@ -67,14 +69,35 @@ module DE1_SoC (HEX0, HEX1, HEX2, HEX3, HEX4, HEX5, KEY, LEDR, SW, CLOCK_50,
 		.VGA_BLANK_n	(VGA_BLANK_N), 
 		.VGA_SYNC_n		(VGA_SYNC_N));
 				
-	logic start;
-	logic mouse_click;
-	assign start = SW[8];
 	
-	ps2 mouse (.CLOCK_50, .reset, .start, .button_left(mouse_click), .bin_x(x), . bin_y(y));
+	//ps2 mouse (.CLOCK_50, .reset, .start, .button_left(mouse_click),
+				  //.bin_x(mouse_x), .bin_y(mouse_y), .PS2_CLK, .PS2_DAT);
 	
-	//square_drawer sq (.clk(CLOCK_50), .reset, .start, .x0(x_loc), .y0(y_loc), .x, .y, .done);
-	//square_loc_picker sqp (.clk(CLOCK_50), .reset, .x_loc, .y_loc);
+	square_loc_picker sqp (.clk(CLOCK_50), .reset, .start(accurate_clck), .x_loc, .y_loc);
+
+	square_drawer sq_w (.clk(CLOCK_50), .reset, .start(accurate_clck), .x0(x_loc), .y0(y_loc),
+							  .x(square_x_w), .y(square_y_w), .done(done_w));
+//	square_drawer sq_b (.clk(CLOCK_50), .reset, .start, .x0(x_loc),.y0(y_loc),
+//							  .x(square_x_b), .y(square_y_b), .done(done_b));
+	
+	assign accurate_clck = (counter[17] == 1);
+	
+	assign x = square_x_w;
+	assign y = square_y_w;
+	
+	always_ff @(posedge CLOCK_50) begin
+		counter <= counter + 1;
+		if(counter[17] == 1) begin //take away for simulation
+			counter <= 0;
+		end
+	end
+
+	//assign x = accurate_clck ? square_x_w : 
+	
+	//accurate_click acc (.clk, .reset, .mouse_click, .mouse_x, .mouse_y, .square_x0, .square_y0, .accurate_clck);
+	
+	score count (.clk(CLOCK_50), .rst(reset), .point(accurate_clck), .HEX0, .HEX1);
+	
 
 endmodule  // DE1_SoC
 
@@ -83,24 +106,25 @@ module DE1_SoC_testbench();
 	logic [9:0] LEDR;
 	logic [3:0] KEY;
 	logic [9:0] SW;
-	logic clk;
+	logic CLOCK_50;
 	logic [7:0] VGA_R, VGA_G, VGA_B;
 	logic VGA_BLANK_N, VGA_CLK, VGA_HS, VGA_SYNC_N, VGA_VS;
-	DE1_SoC dut(HEX0, HEX1, HEX2, HEX3, HEX4, HEX5, KEY, LEDR, SW, clk, 
+
+	DE1_SoC dut(HEX0, HEX1, HEX2, HEX3, HEX4, HEX5, KEY, LEDR, SW, CLOCK_50, 
 	VGA_R, VGA_G, VGA_B, VGA_BLANK_N, VGA_CLK, VGA_HS, VGA_SYNC_N, VGA_VS);
 	
 	
 	parameter clock_period = 100;
 	initial begin
-		clk <= 0;
-		forever #(clock_period/2) clk <= ~clk;
+		CLOCK_50 <= 0;
+		forever #(clock_period/2) CLOCK_50 <= ~CLOCK_50;
 	end
 	integer i;
 	initial begin
-		SW[8] = 1;  @(posedge clk);
-		SW[8] = 0;  @(posedge clk);
+		SW[9] = 1;  			 @(posedge CLOCK_50);
+		SW[9] = 0; SW[8] = 1; @(posedge CLOCK_50);
 		for(i = 0; i < 500; i++)
-			@(posedge clk);
+			@(posedge CLOCK_50);
 																			
 		$stop;
 	end

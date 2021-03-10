@@ -9,26 +9,42 @@ module square_drawer #(parameter SIZE = 10) (clk, reset, start, x0, y0, x, y, do
 	assign x1 = x0 + SIZE;
 	assign y1 = y0 + SIZE;
 	
+	enum {boot,idle, draw, finish} ps, ns;
+	
+	always_comb begin
+		case(ps)
+			boot: ns = idle;
+			idle: ns = start ? draw : idle;
+			draw:  ns = (y_loc == y1 & x_loc == x1) ? finish : draw;
+			finish: ns = done ? finish : idle;
+		endcase
+	end
+	
 	always_ff @(posedge clk) begin
 		if (reset) begin
 			x_loc <= x0;
 			y_loc <= y0;
 			done <= 1'b0;
-		end else if (start) begin
+		end else if (ps == idle) begin
+			x_loc <= x0;
+			y_loc <= y0;
+			done <= 1'b0;
+		end else if (ps == draw) begin
 			if (y_loc == y1 & x_loc == x1) begin
 				done <= 1'b1;
-				x_loc <= x_loc;
-				y_loc <= y_loc;
 			end else if (x_loc == x1) begin
 				x_loc <= x0;
 				y_loc <= y_loc + 1'b1;
-				done <= done;
+				done <= 1'b0;
 			end else begin
 				x_loc <= x_loc + 1'b1;
 				y_loc <= y_loc;
-				done <= done;
+				done <= 1'b0;
 			end
+		end else if (ps == finish) begin
+			done <= 1'b0;
 		end
+		ps <= ns;
 	end
 	
 	assign x = x_loc;
@@ -55,8 +71,8 @@ module square_drawer_testbench();
 		reset <= 1; x0 <= 20; y0 <= 20;				  @(posedge clk);
 		reset <= 0; start <= 1;  						  @(posedge clk);
 															  	  @(posedge done);
-		reset <= 1; x0 <= 0; y0 <= 0; 				  @(posedge clk);
-		reset <= 0; start <= 1; 					     @(posedge clk);
+						x0 <= 0; y0 <= 0; 				  @(posedge clk);
+						start <= 1; 					     @(posedge clk);
 															  	  @(posedge done);
 																		
 		$stop;

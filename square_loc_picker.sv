@@ -79,9 +79,12 @@ module square_loc_picker (clk, reset, start, x_loc, y_loc);
 		if (reset) begin
 			x_loc <= 0;
 			y_loc <= 0;
-		end else begin
+		end else if (start) begin
 			x_loc <= x;
 			y_loc <= y;
+		end else begin
+			x_loc <= x_loc;
+			y_loc <= y_loc;
 		end
 	end
 endmodule
