@@ -36,6 +36,9 @@ module square_drawer #(parameter SIZE = 10) (clk, reset, start, x0, y0, x, y, do
 				x_loc <= x0;
 				y_loc <= y_loc + 1'b1;
 				done <= 1'b0;
+			end else if (y_loc == y1) begin
+				x_loc <= x_loc + 1'b1;
+				y_loc <= y1;
 			end else begin
 				x_loc <= x_loc + 1'b1;
 				y_loc <= y_loc;
