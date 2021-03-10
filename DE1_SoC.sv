@@ -39,13 +39,14 @@ module DE1_SoC (HEX0, HEX1, HEX2, HEX3, HEX4, HEX5, KEY, LEDR, SW, CLOCK_50,
 	
 	logic start;
 	logic mouse_click;
-	logic[20:0] counter = 0;
+	logic[25:0] counter = 0;
 	assign start = SW[8];
 	logic done_w, done_b;
 	logic reset;
 	assign reset = SW[9];
 	logic [10:0] x, y, mouse_x, mouse_y, square_x_w, square_y_w, square_x_b, square_y_b, x_loc, y_loc;
 	logic pixel_color;
+	logic accurate_clck;
 	
 	assign HEX2 = '1;
 	assign HEX3 = '1;
@@ -73,21 +74,21 @@ module DE1_SoC (HEX0, HEX1, HEX2, HEX3, HEX4, HEX5, KEY, LEDR, SW, CLOCK_50,
 	//ps2 mouse (.CLOCK_50, .reset, .start, .button_left(mouse_click),
 				  //.bin_x(mouse_x), .bin_y(mouse_y), .PS2_CLK, .PS2_DAT);
 	
-	square_loc_picker sqp (.clk(CLOCK_50), .reset, .start(accurate_clck), .x_loc, .y_loc);
+   square_loc_picker sqp (.clk(CLOCK_50), .reset, .start(accurate_clck), .x_loc, .y_loc);
 
 	square_drawer sq_w (.clk(CLOCK_50), .reset, .start(accurate_clck), .x0(x_loc), .y0(y_loc),
 							  .x(square_x_w), .y(square_y_w), .done(done_w));
 //	square_drawer sq_b (.clk(CLOCK_50), .reset, .start, .x0(x_loc),.y0(y_loc),
 //							  .x(square_x_b), .y(square_y_b), .done(done_b));
-	
-	assign accurate_clck = (counter[17] == 1);
-	
+
 	assign x = square_x_w;
 	assign y = square_y_w;
 	
+	assign accurate_clck = (counter == 50000000);
+	
 	always_ff @(posedge CLOCK_50) begin
 		counter <= counter + 1;
-		if(counter[17] == 1) begin //take away for simulation
+		if(counter == 50000000) begin //take away for simulation
 			counter <= 0;
 		end
 	end
@@ -123,7 +124,7 @@ module DE1_SoC_testbench();
 	initial begin
 		SW[9] = 1;  			 @(posedge CLOCK_50);
 		SW[9] = 0; SW[8] = 1; @(posedge CLOCK_50);
-		for(i = 0; i < 500; i++)
+		for(i = 0; i < 50000000; i++)
 			@(posedge CLOCK_50);
 																			
 		$stop;
