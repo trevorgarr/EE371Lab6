@@ -1,5 +1,6 @@
 module square_loc_picker (clk, reset, start, x_loc, y_loc, done);
-	input logic clk, reset, start, done;
+	input logic clk, reset, start;
+	output logic done;
 	output logic [10:0] x_loc, y_loc;
 	logic [10:0] x, y;
 	logic [5:0] rand_loc;
@@ -84,10 +85,14 @@ module square_loc_picker (clk, reset, start, x_loc, y_loc, done);
 			x_loc <= x;
 			y_loc <= y;
 			done <= 1;
+		end else if (~start) begin
+			done <= 0;
+			x_loc <= x_loc;
+			y_loc <= y_loc;
 		end else begin
 			x_loc <= x_loc;
 			y_loc <= y_loc;
-			done <= 0;
+			done <= done;
 		end
 	end
 endmodule
