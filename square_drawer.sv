@@ -16,7 +16,7 @@ module square_drawer #(parameter SIZE = 10) (clk, reset, start, x0, y0, x, y, do
 			boot: ns = idle;
 			idle: ns = start ? draw : idle;
 			draw:  ns = (y_loc == y1 & x_loc == x1) ? finish : draw;
-			finish: ns = done ? finish : idle;
+			finish: ns = start ? finish : idle;	
 		endcase
 	end
 	
@@ -24,34 +24,27 @@ module square_drawer #(parameter SIZE = 10) (clk, reset, start, x0, y0, x, y, do
 		if (reset) begin
 			x_loc <= x0;
 			y_loc <= y0;
-			done <= 1'b0;
 		end else if (ps == idle) begin
 			x_loc <= x0;
 			y_loc <= y0;
-			done <= 1'b0;
 		end else if (ps == draw) begin
-			if (y_loc == y1 & x_loc == x1) begin
-				done <= 1'b1;
-			end else if (x_loc == x1) begin
+			if (x_loc == x1) begin
 				x_loc <= x0;
 				y_loc <= y_loc + 1'b1;
-				done <= 1'b0;
 			end else if (y_loc == y1) begin
 				x_loc <= x_loc + 1'b1;
 				y_loc <= y1;
 			end else begin
 				x_loc <= x_loc + 1'b1;
 				y_loc <= y_loc;
-				done <= 1'b0;
 			end
-		end else if (ps == finish) begin
-			done <= 1'b0;
 		end
 		ps <= ns;
 	end
 	
 	assign x = x_loc;
 	assign y = y_loc;
+	assign done = (ps == finish);
 	
 endmodule
 

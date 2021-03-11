@@ -1,7 +1,7 @@
 module square_loc_picker (clk, reset, start, x_loc, y_loc, done);
 	input logic clk, reset, start;
 	output logic done;
-	output logic [10:0] x_loc, y_loc;
+	output logic [10:0] x_loc = 0, y_loc = 0;
 	logic [10:0] x, y;
 	logic [5:0] rand_loc;
 	
@@ -76,25 +76,35 @@ module square_loc_picker (clk, reset, start, x_loc, y_loc, done);
 		endcase
 	end
 	
+	enum{idle,run,finished} ps, ns;
+	
+	always_comb
+		case(ps)
+			idle: ns = start ? run : idle;
+			run: ns = finished;
+			finished: ns = start ? finished : idle;
+		endcase
+	
 	always_ff @(posedge clk) begin
 		if (reset) begin
-			x_loc <= 0;
-			y_loc <= 0;
-			done <= 0;
-		end else if (start) begin
-			x_loc <= x;
-			y_loc <= y;
-			done <= 1;
-		end else if (~start) begin
-			done <= 0;
+			ps <= idle;
+		end else begin
+			ps <= ns;
+		end
+		if(ps == idle) begin
 			x_loc <= x_loc;
 			y_loc <= y_loc;
+		end else if (ps == run) begin
+			x_loc <= x;
+			y_loc <= y;
 		end else begin
 			x_loc <= x_loc;
 			y_loc <= y_loc;
-			done <= done;
 		end
 	end
+	
+	assign done = (ps == finished);
+	
 endmodule
 
 module square_loc_picker_testbench();
