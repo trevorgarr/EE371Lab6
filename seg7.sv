@@ -28,4 +28,3 @@ module seg7 (leds, bcd);
 		endcase 
 	end
 endmodule
-

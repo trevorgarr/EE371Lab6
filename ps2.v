@@ -40,8 +40,8 @@
 // --------------------------------------------------------------------
 module ps2
 	#(
-		parameter WIDTH = 512,
-		parameter HEIGHT = 512,
+		parameter WIDTH = 1000,
+		parameter HEIGHT = 1000,
 		parameter BIN = 10,
 		parameter HYSTERESIS = 3
 	)
@@ -316,5 +316,4 @@ endmodule
 
 
      
-
 

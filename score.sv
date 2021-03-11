@@ -1,17 +1,22 @@
-module score (clk, rst, point, HEX0, HEX1);
+module score (clk, rst, point, HEX0, HEX1, count0, count1);
 	input logic clk, rst, point;
 	output logic [6:0] HEX0, HEX1;
-	logic [3:0] count0, count1;
+	output logic [3:0] count0 = 0, count1 = 0;
+	logic[10:0] coolDown = 0;
 	
 	always_ff @ (posedge clk) begin
 		if (rst) begin
 			count0 <= 0;
 			count1 <= 0;
+			coolDown <= 0;
 		end
 		if (point) begin
-			count0 <= count0 + 1;
-		end
-		else if (count0 > 9) begin
+			if(coolDown > 0)
+				count0 <= count0 + 1;
+			coolDown <= 0;
+		end else
+			coolDown <= coolDown + 1;
+		if (count0 > 9) begin
 			count0 <= 0;
 			count1 <= count1 + 1;
 		end
